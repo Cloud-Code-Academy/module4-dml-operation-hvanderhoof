@@ -219,8 +219,6 @@ public with sharing class DMLOperations {
         }
     }
 
-		
-
     /**
      * Question 10
 	 * Manage the association between Contacts and Accounts
@@ -232,14 +230,19 @@ public with sharing class DMLOperations {
 	 */
 	public static void upsertAccountsWithContacts(List<Contact> contactsToUpsert) {
 		// Loop through each Contact
+        for (Contact cont : contactsToUpsert){
+            // Extract the Account Name from Contact's LastName
+            String accountName = cont.LastName;
 
-		// Extract the Account Name from Contact's LastName
+    		// Get the account based on the name or create one if it doesn't exist
+            Account acct = upsertAccount(accountName);
 
-		// Get the account based on the name or create one if it doesn't exist
+            // Link the Contact to its Account using the Account Id
+            cont.AccountId = acct.Id;
 
-		// Link the Contact to its Account using the Account Id
-
-		// Upsert the Contacts
+            // Upsert the Contacts
+            upsert cont;
+        }
 	}
 
     /**
