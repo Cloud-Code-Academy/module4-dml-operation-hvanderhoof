@@ -164,12 +164,19 @@ public with sharing class DMLOperations {
      * @param oppNames The list of Opportunity names.
      */
    
-    public static void upsertOpportunities(String accountName, List<String> oppNames) {
-        // Step 1: Upsert the Account
-        Account acct = new Account(Name = accountName);
-        upsert acct Name; // Assumes 'Name' is unique or External ID (common pattern for demos)
+     public static void upsertOpportunities(String accountName, List<String> oppNames) {
+        Account acct;
     
-        // Step 2: Query existing Opportunities by name
+        // Try to find existing Account by name
+        List<Account> accounts = [SELECT Id FROM Account WHERE Name = :accountName LIMIT 1];
+        if (!accounts.isEmpty()) {
+            acct = accounts[0];
+        } else {
+            acct = new Account(Name = accountName);
+            insert acct;
+        }
+    
+        // Query existing Opportunities for this Account by name
         Map<String, Opportunity> existingOpps = new Map<String, Opportunity>();
         if (!oppNames.isEmpty()) {
             for (Opportunity opp : [
@@ -180,7 +187,7 @@ public with sharing class DMLOperations {
             }
         }
     
-        // Step 3: Build list of Opportunities to upsert
+        // Build Opportunities to insert or update
         List<Opportunity> oppsToUpsert = new List<Opportunity>();
     
         for (String oppName : oppNames) {
@@ -190,21 +197,22 @@ public with sharing class DMLOperations {
                 opp = existingOpps.get(oppName);
             } else {
                 // Create new Opportunity
-                opp = new Opportunity();
-                opp.Name = oppName;
-                opp.AccountId = acct.Id;
+                opp = new Opportunity(
+                    Name = oppName,
+                    AccountId = acct.Id,
+                    StageName = 'Prospecting',
+                    CloseDate = Date.today().addDays(30)
+                );
             }
     
-            // Common required fields (for both new and existing)
-            opp.StageName = 'Prospecting';
-            opp.CloseDate = Date.today().addDays(30);
-    
+            // Add to list for upsert
             oppsToUpsert.add(opp);
         }
     
-        // Step 4: Upsert Opportunities
+        // Perform upsert using ID (default)
         upsert oppsToUpsert;
     }
+    
 
     
     /**
