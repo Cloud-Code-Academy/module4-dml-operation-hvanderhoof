@@ -164,7 +164,7 @@ public with sharing class DMLOperations {
      * @param oppNames The list of Opportunity names.
      */
     public static void upsertOpportunities(String accountName, List<String> oppNames) {
-        // First, check if the Account with the given name already exists
+    //check if the Account with the given name already exists
     Account acct = [SELECT Id FROM Account WHERE Name = :accountName LIMIT 1];
 
     // If no Account was found, create a new one
@@ -203,12 +203,23 @@ public with sharing class DMLOperations {
 		List<Account> accounts = [SELECT Id FROM Account WHERE Name = :accountName];
 
 		// if the Account exists, update the description
+        if(accounts.size() > 0){
+            Account existingAcct = accounts[0];
+            existingAcct.Description = 'Updated Account';
+            update existingAcct;
+            return existingAcct;
+        }else{ 
+            // otherwise, create a new Account and set the description
+            Account newAcct = new Account(
+                Name = accountName,
+                Description = 'New Account'
+            );
+        insert newAcct;
+        return newAcct;
+        }
+    }
 
-		// otherwise, create a new Account and set the description
-
-		// Upsert the Account
-		return null;
-	}
+		
 
     /**
      * Question 10
