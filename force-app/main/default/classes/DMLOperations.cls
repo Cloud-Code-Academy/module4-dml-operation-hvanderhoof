@@ -163,32 +163,49 @@ public with sharing class DMLOperations {
      * @param accountName The name of the Account.
      * @param oppNames The list of Opportunity names.
      */
+   
     public static void upsertOpportunities(String accountName, List<String> oppNames) {
-    //check if the Account with the given name already exists
-    Account acct = [SELECT Id FROM Account WHERE Name = :accountName LIMIT 1];
-
-    // If no Account was found, create a new one
-    if (acct == null) {
-        acct = new Account(Name = accountName);
-    }
-
-    // Upsert the Account using the Id
-    upsert acct;
-
-        //Make List of Opps 
-        List<Opportunity> oppsToUpsert = new List<Opportunity>();
-
-        // Loop through each Opportunity name
-        for(String oppName : oppNames){
-            Opportunity opp = new Opportunity(
-                Name = oppName,
-                AccountId = acct.Id
-            );
-        oppsToUpsert.add(opp);
+        // Step 1: Upsert the Account
+        Account acct = new Account(Name = accountName);
+        upsert acct Name; // Assumes 'Name' is unique or External ID (common pattern for demos)
+    
+        // Step 2: Query existing Opportunities by name
+        Map<String, Opportunity> existingOpps = new Map<String, Opportunity>();
+        if (!oppNames.isEmpty()) {
+            for (Opportunity opp : [
+                SELECT Id, Name FROM Opportunity 
+                WHERE Name IN :oppNames AND AccountId = :acct.Id
+            ]) {
+                existingOpps.put(opp.Name, opp);
+            }
         }
-        // Add the Opportunity to the list
-        upsert oppsToUpsert Name;    
+    
+        // Step 3: Build list of Opportunities to upsert
+        List<Opportunity> oppsToUpsert = new List<Opportunity>();
+    
+        for (String oppName : oppNames) {
+            Opportunity opp;
+            if (existingOpps.containsKey(oppName)) {
+                // Update existing Opportunity
+                opp = existingOpps.get(oppName);
+            } else {
+                // Create new Opportunity
+                opp = new Opportunity();
+                opp.Name = oppName;
+                opp.AccountId = acct.Id;
+            }
+    
+            // Common required fields (for both new and existing)
+            opp.StageName = 'Prospecting';
+            opp.CloseDate = Date.today().addDays(30);
+    
+            oppsToUpsert.add(opp);
+        }
+    
+        // Step 4: Upsert Opportunities
+        upsert oppsToUpsert;
     }
+
     
     /**
      * Question 9
@@ -251,11 +268,24 @@ public with sharing class DMLOperations {
      * @param leadNames The list of Lead names to be inserted.
      */
     public static void insertAndDeleteLeads(List<String> leadNames) {
+        // Create a list to hold Lead objects
+        List<Lead> leadsToInsert = new List<Lead>();
+    
         // Loop through each Lead name
-
+        for(String leadName : leadNames){
+            // Create a new Lead object and set the Name field
+            Lead newLead = new Lead();
+            newLead.LastName = leadName;
+            newLead.Company = 'Test Company';
+            
+            // Add the Lead to the list
+            leadsToInsert.add(newLead);
+        }
+    
         // Insert the Leads
-
+        insert leadsToInsert;
         // Delete the Leads
+        delete leadsToInsert;
     }
 
 
@@ -266,8 +296,17 @@ public with sharing class DMLOperations {
      * @param numOfCases The number of cases to create.
      */
     public static void createAndDeleteCases(String accountId, Integer numOfCases) {
-        // Insert the cases
+        List<Case> casesToInsert = new List<Case>();
+        
+        for(Integer i =0; i < numOfCases; i++){
+            Case newCase = new Case();
+            newCase.AccountId = accountId;
+            casesToInsert.add(newCase);
+        }
 
+        // Insert the cases
+        insert casesToInsert;
         // Delete the cases
+        delete casesToInsert;
     }
 }
