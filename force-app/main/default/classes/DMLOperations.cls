@@ -173,7 +173,7 @@ public with sharing class DMLOperations {
             acct = accounts[0];
         } else {
             acct = new Account(Name = accountName);
-            insert acct;
+            database.insert(acct, AccessLevel.USER_MODE);
         }
     
         // Query existing Opportunities for this Account by name
@@ -210,7 +210,7 @@ public with sharing class DMLOperations {
         }
     
         // Perform upsert using ID (default)
-        upsert oppsToUpsert;
+        Database.upsert(oppsToUpsert, AccessLevel.USER_MODE);
     }
     
 
@@ -231,7 +231,7 @@ public with sharing class DMLOperations {
         if(accounts.size() > 0){
             Account existingAcct = accounts[0];
             existingAcct.Description = 'Updated Account';
-            update existingAcct;
+            Database.update(existingAcct, AccessLevel.USER_MODE);
             return existingAcct;
         }else{ 
             // otherwise, create a new Account and set the description
@@ -239,7 +239,7 @@ public with sharing class DMLOperations {
                 Name = accountName,
                 Description = 'New Account'
             );
-        insert newAcct;
+        Database.insert(newAcct, AccessLevel.USER_MODE);
         return newAcct;
         }
     }
@@ -266,7 +266,7 @@ public with sharing class DMLOperations {
             cont.AccountId = acct.Id;
         }
             // Upsert the Contacts
-            upsert contactsToUpsert;
+            Database.upsert(contactsToUpsert,AccessLevel.USER_MODE);
         
 	}
 
