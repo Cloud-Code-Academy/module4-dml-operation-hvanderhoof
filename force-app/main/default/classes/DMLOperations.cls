@@ -264,10 +264,10 @@ public with sharing class DMLOperations {
 
             // Link the Contact to its Account using the Account Id
             cont.AccountId = acct.Id;
-
-            // Upsert the Contacts
-            upsert cont;
         }
+            // Upsert the Contacts
+            upsert contactsToUpsert;
+        
 	}
 
     /**
